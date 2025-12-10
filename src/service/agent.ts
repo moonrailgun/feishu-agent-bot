@@ -90,7 +90,7 @@ export class AgentService {
    * @param chatId 聊天ID / Chat ID
    * @param query 用户查询 / User query
    */
-  async generateResponse(chatId: string, query: string) {
+  async generateResponse(chatId: string, query: string, replacedMessageId?: string) {
     // 获取用户上下文信息
     // Get user context information
     const userContext = await this.contextService.mustGetContext();
@@ -111,7 +111,14 @@ export class AgentService {
     try {
       // 发送初始"思考中"消息并获取消息ID
       // Send initial "thinking" message and get message ID
-      const { messageId } = await this.provider.sendMessage(chatId, '思考中...');
+      let messageId: string;
+      if (replacedMessageId) {
+        await this.provider.updateMessage(replacedMessageId, '思考中...');
+        messageId = replacedMessageId;
+      } else {
+        const { messageId: _messageId } = await this.provider.sendMessage(chatId, '思考中...');
+        messageId = _messageId;
+      }
 
       // 临时消息数组，用于流式更新
       // Temporary message array for streaming updates
@@ -176,7 +183,11 @@ export class AgentService {
         onStepFinish: step => {
           const messages = step.response.messages;
           this.contextService.addMessage(messages);
-          this.provider.updateMessage(messageId, messages);
+          try {
+            this.provider.updateMessage(messageId, messages);
+          } catch (error) {
+            this.provider.sendMessage(chatId, '发生错误，请重试:\n' + JSON.stringify(error, null, 2));
+          }
         },
 
         /**

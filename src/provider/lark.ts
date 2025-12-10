@@ -52,6 +52,21 @@ export function generateLarkCardMessage(content: string) {
   };
 }
 
+export function generateLarkCardMessageWithElements(elements: any[]) {
+  return {
+    schema: '2.0',
+    config: {
+      update_multi: true,
+      streaming_mode: false,
+    },
+    body: {
+      direction: 'vertical',
+      padding: '12px 12px 12px 12px',
+      elements: elements,
+    },
+  };
+}
+
 /**
  * 飞书/Lark聊天提供者类
  * Lark Chat Provider Class
@@ -92,10 +107,83 @@ export class LarkChatProvider implements ChatProvider {
    * @param message 新的消息内容 / New message content
    */
   async updateMessage(messageId: string, message: Message): Promise<void> {
-    if (typeof message !== 'string') {
-      message = parseMessages2Markdown(message);
+    if (typeof message === 'string') {
+      return await larkService.updateCardMessage(messageId, generateLarkCardMessage(message));
     }
-    return await larkService.updateCardMessage(messageId, generateLarkCardMessage(message));
+
+    const finalResult = generateLarkCardMessageWithElements(
+      message
+        .map(item => {
+          // 处理字符串类型的消息内容
+          // Handle string type message content
+          if (typeof item.content === 'string') {
+            return [
+              {
+                tag: 'markdown',
+                content: item.content,
+              },
+            ];
+          }
+
+          // 处理复合内容类型的消息
+          // Handle composite content type messages
+          const result = [];
+
+          for (const content of item.content) {
+            if (content.type === 'text') {
+              result.push({
+                tag: 'markdown',
+                content: content.text,
+              });
+            }
+
+            if (content.type === 'tool-call') {
+              result.push({
+                tag: 'collapsible_panel',
+                header: {
+                  title: {
+                    tag: 'markdown',
+                    content: `调用工具: ${content.toolName}`,
+                  },
+                },
+                elements: [
+                  {
+                    tag: 'markdown',
+                    content: `\`\`\`\n${JSON.stringify(content.args, null, 2)}\n\`\`\``,
+                  },
+                ],
+              });
+            }
+            if (content.type === 'tool-result') {
+              result.push({
+                tag: 'collapsible_panel',
+                header: {
+                  title: {
+                    tag: 'markdown',
+                    content: '执行完毕',
+                  },
+                },
+                elements: [
+                  {
+                    tag: 'markdown',
+                    content: `\`\`\`\n${JSON.stringify(content.result, null, 2)}\n\`\`\``,
+                  },
+                ],
+              });
+            }
+          }
+          return result;
+        })
+        .flat()
+    );
+
+    return await larkService.updateCardMessage(messageId, finalResult);
+
+    // if (typeof message !== 'string') {
+    //   message = parseMessages2Markdown(message);
+    // }
+    // console.log('message', message);
+    // return await larkService.updateCardMessage(messageId, generateLarkCardMessage(message));
   }
 
   /**
@@ -165,6 +253,11 @@ export class LarkChatProvider implements ChatProvider {
           const chatId = messageEvent.message.chat_id || '';
           const chatType = messageEvent.message.chat_type || '';
           const messageType = messageEvent.message?.message_type || '';
+
+          if (chatType === 'group') {
+            await larkService.sendTextMessage(chatId, '暂不支持群组消息'); // 暂不开放群组消息，因为不安全
+            return;
+          }
 
           // 只处理文本和富文本消息
           // Only handle text and post messages
