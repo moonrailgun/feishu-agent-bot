@@ -87,7 +87,7 @@ export class AgentService {
     return await this.provider.updateMessage(messageId, message);
   }, 200);
 
-  async getTools(isGroup: boolean) {
+  async getTools(chatId: string, isGroup: boolean) {
     const userContext = await this.contextService.mustGetContext();
 
     let tools: Record<string, Tool> = {};
@@ -179,6 +179,69 @@ export class AgentService {
       },
     });
 
+    // Add update group info tool for group chats
+    if (isGroup) {
+      tools.updateGroupInfo = tool({
+        description:
+          'Update group chat information including name, description, and avatar. This tool can only be used in group chats.',
+        parameters: z.object({
+          name: z.string().optional().describe('New group name'),
+          description: z.string().optional().describe('New group description'),
+          avatarUrl: z
+            .string()
+            .optional()
+            .describe('URL of the new group avatar image. Will be uploaded and set as group avatar.'),
+        }),
+        execute: async ({ name, description, avatarUrl }) => {
+          try {
+            const updateParams: { name?: string; description?: string; avatar?: string } = {};
+
+            if (name) {
+              updateParams.name = name;
+            }
+
+            if (description) {
+              updateParams.description = description;
+            }
+
+            if (avatarUrl) {
+              const uploadResult = await larkService.uploadImageFromUrl(avatarUrl, 'avatar');
+              if (uploadResult?.image_key) {
+                updateParams.avatar = uploadResult.image_key;
+              } else {
+                return {
+                  success: false,
+                  error: 'Failed to upload avatar image',
+                };
+              }
+            }
+
+            if (Object.keys(updateParams).length === 0) {
+              return {
+                success: false,
+                error: 'At least one parameter (name, description, or avatarUrl) must be provided',
+              };
+            }
+
+            await larkService.updateChatInfo(chatId, updateParams);
+
+            return {
+              success: true,
+              message: 'Group information updated successfully',
+              updated: updateParams,
+            };
+          } catch (error) {
+            console.error('Failed to update group info:', error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            return {
+              success: false,
+              error: `Failed to update group information: ${errorMsg}`,
+            };
+          }
+        },
+      });
+    }
+
     return tools;
   }
 
@@ -232,7 +295,7 @@ export class AgentService {
       // Temporary message array for streaming updates
       let tempMessages: AgentCoreMessage[] = [];
 
-      const tools = await this.getTools(isGroup);
+      const tools = await this.getTools(chatId, isGroup);
 
       for (const tool of Object.values(tools)) {
         const originExec = tool.execute;

@@ -34,13 +34,9 @@ export function getSystemPrompt(userId: string, chatId: string) {
 
 响应格式规范 / Response Format Guidelines:
 - 请不要使用 markdown 的 h1~h3 标题，请从使用 h4 标题开始 / Please don't use markdown h1~h3 headings, start from h4 headings
-- 确保在最终响应中包含来源 / Ensure to include sources in final responses
 
 功能说明 / Feature Description:
-你可以通过MCP工具访问飞书/Lark的各种功能，包括但不限于：
-You can access various Lark features through MCP tools, including but not limited to:
-- 发送消息 / Send messages
-- 创建文档 / Create documents
+你可以通过提供的工具访问飞书/Lark的各种功能
 
 请根据用户的需求，选择合适的工具来完成任务。
 Please choose appropriate tools based on user needs to complete tasks.`;

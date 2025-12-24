@@ -228,6 +228,38 @@ export class LarkService {
       data: { image_type: type, image: stream as any },
     });
   }
+
+  /**
+   * Update chat/group information
+   * @param chatId Chat ID
+   * @param params Update parameters
+   * @returns Promise Update result
+   */
+  async updateChatInfo(
+    chatId: string,
+    params: {
+      name?: string;
+      description?: string;
+      avatar?: string;
+    }
+  ): Promise<any> {
+    const updateData: any = {};
+
+    if (params.name) {
+      updateData.name = params.name;
+    }
+    if (params.description) {
+      updateData.description = params.description;
+    }
+    if (params.avatar) {
+      updateData.avatar = params.avatar;
+    }
+
+    return this.larkClient.im.chat.update({
+      path: { chat_id: chatId },
+      data: updateData,
+    });
+  }
 }
 
 // 导出飞书/Lark服务单例实例
