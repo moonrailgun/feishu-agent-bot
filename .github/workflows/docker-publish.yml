@@ -26,8 +26,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            moonrailgun/tianji
-            ghcr.io/msgbyte/tianji
+            moonrailgun/feishu-agent-bot
           tags: |
             type=semver,pattern={{version}}
       - name: Login to DockerHub
