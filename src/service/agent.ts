@@ -92,9 +92,9 @@ export class AgentService {
 
     let tools: Record<string, Tool> = {};
 
-    // 工具集合，从所有MCP客户端收集
-    // Tool collection, gathered from all MCP clients
-    if (!isGroup) {
+    // Only add MCP tools if user is logged in
+    const isLogin = await this.contextService.isLogin();
+    if (!isGroup && isLogin) {
       for (const mcpClient of userContext.mcpClients) {
         const mcpTools = await mcpClient.tools();
         tools = { ...tools, ...mcpTools };

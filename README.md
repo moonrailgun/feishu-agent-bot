@@ -11,6 +11,15 @@ This is an intelligent assistant bot demo project based on Lark Open Platform an
 
 ⚠️ 注意：Demo 仅用于学习和功能演示，未考虑存储、部署、安全、日志等，请勿直接用于生产环境！若在生产环境使用，请自行承担风险！
 
+### 主要特性 / Key Features
+
+- **智能授权管理**: 用户可以在无需授权的情况下使用基础 AI 对话功能，仅在需要使用飞书 MCP 工具时通过 `/login` 命令进行授权。
+- **Smart Authorization Management**: Users can use basic AI chat features without authorization, and only need to authorize via `/login` command when they want to use Lark MCP tools.
+- **灵活的工具集成**: 支持多种 MCP 工具，包括多维表格、文档创建等飞书能力。
+- **Flexible Tool Integration**: Supports various MCP tools including Bitable, document creation, and other Lark capabilities.
+- **流式响应**: 实时流式更新 AI 响应，提供更好的用户体验。
+- **Streaming Response**: Real-time streaming updates for AI responses, providing better user experience.
+
 ## 项目架构 / Project Architecture
 
 ```
@@ -200,10 +209,31 @@ By modifying the string after the `-t` parameter, you can specify different tool
 
 ### 与机器人互动 / Interacting with the Bot
 
-启动服务后，您可以在飞书/Lark 中找到您的机器人并开始对话。例如，您可以发送：
-After starting the service, you can find your bot in Feishu/Lark and start a conversation. For example, you can send:
+启动服务后，您可以在飞书/Lark 中找到您的机器人并开始对话。
+After starting the service, you can find your bot in Feishu/Lark and start a conversation.
 
-> 帮我创建一个名为“项目任务”的多维表格，包含“任务名称”、“负责人”和“截止日期”这几列。
+#### 基础对话（无需授权）/ Basic Conversation (No Authorization Required)
+
+您可以直接向机器人发送消息进行 AI 对话，无需授权：
+You can directly send messages to the bot for AI conversations without authorization:
+
+> 你好，请介绍一下你自己
+> Hello, please introduce yourself
+
+> 帮我写一个 Python 快速排序的代码
+> Help me write a Python quick sort code
+
+#### 使用 MCP 工具（需要授权）/ Using MCP Tools (Authorization Required)
+
+如果您需要使用飞书 MCP 工具（如创建多维表格、文档等），需要先发送 `/login` 命令进行授权：
+If you need to use Lark MCP tools (e.g., creating Bitables, documents), you need to send `/login` command first:
+
+> /login
+
+授权成功后，您可以使用 MCP 工具：
+After successful authorization, you can use MCP tools:
+
+> 帮我创建一个名为"项目任务"的多维表格，包含"任务名称"、"负责人"和"截止日期"这几列。
 > Help me create a Bitable named "Project Tasks" with the columns "Task Name", "Assignee", and "Due Date".
 
 机器人将会调用工具为您创建表格。
@@ -212,12 +242,13 @@ The bot will then call the appropriate tool to create the table for you.
 ### 用户交互流程 / User Interaction Flow
 
 1. **添加机器人**: 在飞书/Lark 中添加你的机器人应用 / **Add the Bot**: Add your bot application in Feishu/Lark.
-2. **发送消息**: 向机器人发送任意消息 / **Send a Message**: Send any message to the bot.
-3. **授权登录**: 点击机器人发送的登录链接完成 OAuth 授权 / **Authorize via OAuth**: Click the login link sent by the bot to complete the OAuth authorization.
-4. **开始对话**: 登录成功后即可与 AI 助手进行对话 / **Start Chatting**: After a successful login, you can start chatting with the AI assistant.
+2. **发送消息**: 向机器人发送任意消息，即可与 AI 助手进行基础对话 / **Send a Message**: Send any message to the bot and start basic conversations with the AI assistant.
+3. **授权登录（可选）**: 如需使用飞书 MCP 工具（如创建多维表格、文档等），发送 `/login` 命令，然后点击机器人发送的登录链接完成 OAuth 授权 / **Authorize via OAuth (Optional)**: To use Lark MCP tools (e.g., creating Bitables, documents), send `/login` command and click the login link to complete OAuth authorization.
+4. **使用完整功能**: 登录成功后即可使用所有 MCP 工具功能 / **Use Full Features**: After successful login, you can use all MCP tool features.
 
 ### 特殊命令 / Special Commands
 
+- `/login` - 触发授权登录流程，授权后可使用飞书 MCP 工具 / Trigger authorization login process to use Lark MCP tools
 - `/clear` - 清除当前用户的对话上下文 / Clear the current user's conversation context
 
 ## 核心组件说明 / Core Components

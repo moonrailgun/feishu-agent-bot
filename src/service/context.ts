@@ -221,8 +221,8 @@ export class ContextService {
   /**
    * 确保获取有效的用户上下文
    * Ensure getting valid user context
-   * 如果MCP客户端不存在，会自动创建
-   * Automatically create MCP client if it doesn't exist
+   * 如果用户已登录且MCP客户端不存在，会自动创建
+   * Automatically create MCP client if user is logged in and it doesn't exist
    * @returns 用户上下文对象 / User context object
    */
   async mustGetContext() {
@@ -234,9 +234,13 @@ export class ContextService {
       return context;
     }
 
-    // 创建MCP客户端并返回更新后的上下文
-    // Create MCP client and return updated context
-    await this.createMcpClient();
+    // 只有在用户已登录时才创建MCP客户端
+    // Only create MCP client when user is logged in
+    const isLogin = await this.isLogin();
+    if (isLogin) {
+      await this.createMcpClient();
+    }
+
     return this.getContext();
   }
 }

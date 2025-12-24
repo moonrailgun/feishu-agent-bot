@@ -19,8 +19,6 @@ import { AgentService } from '../service/agent';
 import { ContextService } from '../service/context';
 import { ChatProvider } from '../provider/type';
 import { Express } from 'express';
-import { generateLarkCardMessageWithElements } from '../provider/lark';
-import { larkService } from '../service/lark';
 
 /**
  * 聊天控制器类
@@ -65,62 +63,6 @@ export class ChatController {
           const agentService = AgentService.getUserAgentService(userId, provider);
           const contextService = ContextService.getUserContextService(userId);
 
-          // if (query.startsWith('/test')) {
-          //   await larkService.sendCardMessage(
-          //     chatId,
-          //     generateLarkCardMessageWithElements([
-          //       {
-          //         tag: 'collapsible_panel',
-          //         element_id: 'custom_id',
-          //         header: {
-          //           title: {
-          //             tag: 'markdown',
-          //             content: 'foo',
-          //           },
-          //         },
-          //         elements: [
-          //           {
-          //             tag: 'markdown',
-          //             content: `\`\`\`\n${JSON.stringify({ foo: 'bar' }, null, 2)}\n\`\`\``,
-          //           },
-          //         ],
-          //       },
-          //     ])
-          //     // {
-          //     //   schema: '2.0', // 卡片 JSON 结构的版本。默认为 1.0。要使用 JSON 2.0 结构，必须显示声明 2.0。
-          //     //   body: {
-          //     //     elements: [
-          //     //       {
-          //     //         tag: 'collapsible_panel', // 折叠面板的标签。
-          //     //         element_id: 'custom_id', // 操作组件的唯一标识。JSON 2.0 新增属性。用于在调用组件相关接口中指定组件。需开发者自定义。
-          //     //         header: {
-          //     //           // 折叠面板的标题设置。
-          //     //           title: {
-          //     //             // 标题文本设置。支持 plain_text 和 markdown。
-          //     //             tag: 'markdown',
-          //     //             content: '**面板标题文本**',
-          //     //           },
-          //     //         },
-          //     //         border: {
-          //     //           // 边框设置。默认不显示边框。
-          //     //           color: 'grey', // 边框的颜色。
-          //     //           corner_radius: '5px', // 圆角设置。
-          //     //         },
-          //     //         elements: [
-          //     //           // 此处可添加各个组件的 JSON 结构。暂不支持表单（form）组件。
-          //     //           {
-          //     //             tag: 'markdown',
-          //     //             content: '很长的文本',
-          //     //           },
-          //     //         ],
-          //     //       },
-          //     //     ],
-          //     //   },
-          //     // }
-          //   );
-          //   return;
-          // }
-
           /**
            * 处理清除上下文命令
            * Handle clear context command
@@ -134,14 +76,18 @@ export class ChatController {
           }
 
           /**
-           * 检查用户登录状态
-           * Check user login status
-           * 未登录用户需要先完成授权流程
-           * Unauthorized users need to complete authorization flow first
+           * 处理用户登录命令
+           * Handle user login command
+           * 用户发送 /login 命令时弹出授权提示
+           * Show authorization prompt when user sends /login command
            */
-          let loginMessageId: string | undefined;
-          const isLogin = await contextService.isLogin();
-          if (!isLogin) {
+          if (query.startsWith('/login')) {
+            const isLogin = await contextService.isLogin();
+            if (isLogin) {
+              await provider.sendMessage(chatId, '你已经登录了，无需重复登录');
+              return;
+            }
+
             // 发送登录链接给用户
             // Send login link to user
             const { messageId } = await provider.sendMessage(
@@ -157,16 +103,17 @@ export class ChatController {
               return;
             }
 
-            loginMessageId = messageId;
+            await provider.updateMessage(messageId, '登录成功！现在你可以使用完整的功能了');
+            return;
           }
 
           /**
            * 生成AI响应
            * Generate AI response
-           * 用户已登录，开始处理消息并生成智能回复
-           * User is logged in, start processing message and generate intelligent response
+           * 开始处理消息并生成智能回复
+           * Start processing message and generate intelligent response
            */
-          await agentService.generateResponse({ chatId, query, replacedMessageId: loginMessageId, isGroup });
+          await agentService.generateResponse({ chatId, query, isGroup });
         }
       );
 

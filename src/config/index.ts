@@ -101,6 +101,13 @@ export const config = {
     }).chatModel(process.env.OPENAI_MODEL || ''),
   },
 
+  image: {
+    apiUrl: process.env.IMAGE_GENERATION_API_URL || '',
+    authToken: process.env.IMAGE_GENERATION_TOKEN || '',
+    defaultModel: process.env.IMAGE_GENERATION_DEFAULT_MODEL || 'gemini-3-pro-image-preview',
+    referer: process.env.IMAGE_GENERATION_REFERER,
+  },
+
   /**
    * 服务器端口配置
    * Server port configuration

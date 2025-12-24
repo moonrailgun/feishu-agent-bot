@@ -13,6 +13,8 @@
  * - Support image-to-image generation
  */
 
+import { config } from '../config';
+
 /**
  * 支持的图片生成模型
  * Supported image generation models
@@ -69,9 +71,9 @@ export interface ImageGenerationConfig {
  * Default configuration
  */
 const DEFAULT_CONFIG: Required<ImageGenerationConfig> = {
-  apiUrl: `${process.env.IMAGE_GENERATION_API_URL}/api/image-generation/generate`,
-  authToken: process.env.IMAGE_GENERATION_TOKEN || '',
-  defaultModel: 'gemini-3-pro-image-preview',
+  apiUrl: config.image.apiUrl,
+  authToken: config.image.authToken,
+  defaultModel: config.image.defaultModel as ImageGenerationModel,
 };
 
 /**
@@ -107,31 +109,36 @@ export class ImageGenerator {
         ...(request.height && { height: request.height }),
       };
 
+      const header = {
+        accept: '*/*',
+        'accept-language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+        'cache-control': 'no-cache',
+        'content-type': 'application/json',
+        origin: config.image.referer || '',
+        pragma: 'no-cache',
+        priority: 'u=1, i',
+        referer: `${config.image.referer}/`,
+        'sec-ch-ua': '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+        Authorization: `Bearer ${this.config.authToken}`,
+      };
+
+      console.log('image generation request headers:', header);
+
       const response = await fetch(this.config.apiUrl, {
         method: 'POST',
-        headers: {
-          accept: '*/*',
-          'accept-language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
-          'cache-control': 'no-cache',
-          'content-type': 'application/json',
-          origin: 'https://tavern.yata.art',
-          pragma: 'no-cache',
-          priority: 'u=1, i',
-          referer: 'https://tavern.yata.art/',
-          'sec-ch-ua': '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"macOS"',
-          'sec-fetch-dest': 'empty',
-          'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'same-site',
-          'user-agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
-          Authorization: `Bearer ${this.config.authToken}`,
-        },
+        headers: header,
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
+        console.error('image generation error response:', await response.text());
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
