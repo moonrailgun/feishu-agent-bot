@@ -27,7 +27,8 @@ src/
 │   ├── agent.ts          # AI代理服务 / AI agent service
 │   ├── context.ts        # 上下文管理 / Context management
 │   ├── lark.ts           # 飞书/LarkAPI服务 / Lark API service
-│   └── mcp.ts            # MCP客户端服务 / MCP client service
+│   ├── mcp.ts            # MCP客户端服务 / MCP client service
+│   └── redis.ts          # Redis存储服务 / Redis storage service
 ├── util/                 # 工具函数 / Utility functions
 │   ├── index.ts          # 通用工具 / Common utilities
 │   └── message.ts        # 消息处理 / Message processing
@@ -48,7 +49,8 @@ graph TB
     F --> H[MCP客户端/MCP Client]
     H --> I[飞书/LarkAPI/Lark API]
     E --> J[用户状态管理/User State Management]
-    I --> K[飞书/Lark开放平台/Lark Open Platform]
+    E --> K[Redis存储/Redis Storage]
+    I --> L[飞书/Lark开放平台/Lark Open Platform]
 ```
 
 ## 安装和配置 / Installation and Configuration
@@ -59,6 +61,7 @@ graph TB
 - npm >= 8.0.0 或 yarn >= 1.22.0
 - 飞书/Lark 开放平台应用 / Lark Open Platform Application
 - AI 模型 API 访问权限 / AI Model API Access
+- Redis 服务器 (用于存储用户认证令牌) / Redis Server (for storing user auth tokens)
 
 ### 1. 克隆项目 / Clone Project
 
@@ -90,6 +93,14 @@ OPENAI_API_KEY=your_api_key
 
 # 服务器配置 / Server Configuration
 PORT=3000
+
+# Redis配置 / Redis Configuration
+# 格式 / Format: redis://[:password@]host[:port][/db]
+# 示例 / Examples:
+#   本地无密码 / Local without password: redis://localhost:6379
+#   带密码 / With password: redis://:mypassword@localhost:6379/0
+#   远程 / Remote: redis://:password@redis.example.com:6379/0
+REDIS_URL=redis://localhost:6379
 ```
 
 ### 4. 飞书/Lark 应用配置 / Feishu/Lark Application Configuration
@@ -223,8 +234,8 @@ Manages AI model conversation generation, handles tool calls and streaming respo
 
 ### 上下文服务 (ContextService)
 
-维护用户的对话历史、认证状态和 MCP 客户端连接。
-Maintains user conversation history, authentication state, and MCP client connections.
+维护用户的对话历史、认证状态（通过 Redis 持久化）和 MCP 客户端连接。
+Maintains user conversation history, authentication state (persisted via Redis), and MCP client connections.
 
 ### 飞书/Lark 服务 (LarkService)
 
@@ -235,6 +246,11 @@ Encapsulates Lark Open Platform API calls, provides message sending, user info r
 
 创建和管理 MCP 客户端连接，提供工具调用功能。
 Creates and manages MCP client connections, provides tool calling functionality.
+
+### Redis 服务 (RedisService)
+
+管理用户认证令牌的持久化存储，支持自动过期和 TTL 管理。
+Manages persistent storage of user authentication tokens with automatic expiration and TTL management.
 
 ## 故障排除 / Troubleshooting
 
@@ -251,3 +267,6 @@ A: 检查您的服务器与 AI 模型 API (`OPENAI_BASE_URL`) 之间的网络连
 
 **Q: 工具调用失败 / Tool calls fail**
 A: 确认 MCP 客户端连接正常，并检查机器人的 API 权限是否包含了工具所需的所有权限。 / Ensure the MCP client is connected correctly and check if the bot's API permissions include all scopes required by the tools.
+
+**Q: Redis 连接失败 / Redis connection fails**
+A: 确认 Redis 服务正在运行，并检查 `.env` 文件中的 `REDIS_URL` 配置是否正确。如果使用带密码的 Redis，请确保 URL 格式正确 (如 `redis://:password@host:port`)。 / Ensure Redis service is running and check if `REDIS_URL` in `.env` file is configured correctly. If using Redis with password, make sure the URL format is correct (e.g., `redis://:password@host:port`).

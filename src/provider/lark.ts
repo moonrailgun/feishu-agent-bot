@@ -170,6 +170,17 @@ export class LarkChatProvider implements ChatProvider {
                   },
                 ],
               });
+
+              if (content.toolName === 'generateImage') {
+                const imageKeys = (content.result as any).imageKeys ?? [];
+                // Document: https://open.feishu.cn/document/feishu-cards/card-components/content-components/image
+                for (const key of imageKeys) {
+                  result.push({
+                    tag: 'img',
+                    img_key: key,
+                  });
+                }
+              }
             }
           }
           return result;
@@ -267,10 +278,10 @@ export class LarkChatProvider implements ChatProvider {
           const messageType = messageEvent.message?.message_type || '';
           const isGroup = chatType === 'group';
 
-          if (chatType === 'group') {
-            await larkService.sendTextMessage(chatId, '暂不支持群组消息'); // 暂不开放群组消息，因为不安全
-            return;
-          }
+          // if (chatType === 'group') {
+          //   await larkService.sendTextMessage(chatId, '暂不支持群组消息'); // 暂不开放群组消息，因为不安全
+          //   return;
+          // }
 
           // 只处理文本和富文本消息
           // Only handle text and post messages

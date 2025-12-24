@@ -4,19 +4,20 @@
  *
  * 功能说明:
  * - 管理用户的对话历史
- * - 维护用户的认证状态
+ * - 维护用户的认证状态（通过Redis）
  * - 管理MCP客户端连接
  * - 提供登录状态检查和等待功能
  *
  * Features:
  * - Manage user conversation history
- * - Maintain user authentication state
+ * - Maintain user authentication state (via Redis)
  * - Manage MCP client connections
  * - Provide login status check and waiting functionality
  */
 
 import { CoreMessage } from 'ai';
 import { MCPClientService } from './mcp';
+import { RedisService } from './redis';
 
 /**
  * 认证令牌接口
@@ -47,9 +48,6 @@ export interface UserContext {
 
   /** MCP客户端连接数组 / MCP client connections array */
   mcpClients: Awaited<ReturnType<typeof MCPClientService.createLarkMCPClient>>[];
-
-  /** 用户认证令牌（可选）/ User authentication token (optional) */
-  authToken?: AuthToken;
 }
 
 /**
@@ -59,6 +57,9 @@ export interface UserContext {
  * Provides independent context management for each user
  */
 export class ContextService {
+  /** 用户ID / User ID */
+  private userId: string;
+
   /** 用户上下文数据 / User context data */
   private userContext: UserContext;
 
@@ -70,8 +71,10 @@ export class ContextService {
    * Constructor
    * 初始化空的用户上下文
    * Initialize empty user context
+   * @param userId 用户ID / User ID
    */
-  constructor() {
+  constructor(userId: string) {
+    this.userId = userId;
     this.userContext = { coreMessages: [], mcpClients: [] };
   }
 
@@ -90,7 +93,7 @@ export class ContextService {
 
     // 创建新的上下文服务实例并缓存
     // Create new context service instance and cache it
-    const contextService = new ContextService();
+    const contextService = new ContextService(userId);
     this.contextServices.set(userId, contextService);
     return contextService;
   }
@@ -98,10 +101,10 @@ export class ContextService {
   /**
    * 检查用户是否已登录
    * Check if user is logged in
-   * @returns 布尔值表示登录状态 / Boolean indicating login status
+   * @returns Promise<boolean> 登录状态 / Login status
    */
-  get isLogin() {
-    return Boolean(this.getContext().authToken);
+  async isLogin(): Promise<boolean> {
+    return await RedisService.hasAuthToken(this.userId);
   }
 
   /**
@@ -110,7 +113,7 @@ export class ContextService {
    * @param timeout 超时时间（毫秒），默认5分钟 / Timeout in milliseconds, default 5 minutes
    * @returns Promise<boolean> 登录是否成功 / Promise<boolean> whether login succeeded
    */
-  waitLogin(timeout: number = 5 * 60 * 1000) {
+  async waitLogin(timeout: number = 5 * 60 * 1000): Promise<boolean> {
     let time = 0;
     return new Promise(resolve => {
       /**
@@ -119,10 +122,11 @@ export class ContextService {
        * 每秒检查一次登录状态，直到登录成功或超时
        * Check login status every second until login succeeds or timeout
        */
-      const checker = () => {
+      const checker = async () => {
         // 检查是否已登录
         // Check if already logged in
-        if (this.isLogin) {
+        const loggedIn = await this.isLogin();
+        if (loggedIn) {
           resolve(true);
           return;
         }
@@ -177,9 +181,9 @@ export class ContextService {
    * @param authToken 认证令牌信息 / Authentication token information
    */
   async addAuthToken(authToken: AuthToken) {
-    // 保存认证令牌到用户上下文
-    // Save authentication token to user context
-    this.userContext.authToken = authToken;
+    // 保存认证令牌到Redis
+    // Save authentication token to Redis
+    await RedisService.setAuthToken(this.userId, authToken);
 
     // 创建对应的MCP客户端连接
     // Create corresponding MCP client connection
@@ -204,9 +208,13 @@ export class ContextService {
       mcpClient.close();
     }
 
+    // 从Redis获取认证令牌
+    // Get auth token from Redis
+    const authToken = await RedisService.getAuthToken(this.userId);
+
     // 创建新的飞书/LarkMCP客户端
     // Create new Lark MCP client
-    const mcpClient = await MCPClientService.createLarkMCPClient(context.authToken?.accessToken);
+    const mcpClient = await MCPClientService.createLarkMCPClient(authToken?.accessToken);
     this.userContext.mcpClients.push(mcpClient);
   }
 

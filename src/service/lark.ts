@@ -16,6 +16,7 @@
  */
 
 import { Client, WSClient, withUserAccessToken } from '@larksuiteoapi/node-sdk';
+import { Readable } from 'stream';
 import { config } from '../config';
 
 /**
@@ -209,6 +210,22 @@ export class LarkService {
     return this.larkClient.im.message.patch({
       path: { message_id: messageId },
       data: { content: JSON.stringify(card) },
+    });
+  }
+
+  async uploadImageFromUrl(imageUrl: string, type: 'message' | 'avatar' = 'message') {
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Create readable stream from buffer
+    const stream = Readable.from(buffer);
+
+    // Add path property to make form-data recognize it as a file
+    (stream as any).path = 'image.jpg';
+
+    return this.larkClient.im.v1.image.create({
+      data: { image_type: type, image: stream as any },
     });
   }
 }

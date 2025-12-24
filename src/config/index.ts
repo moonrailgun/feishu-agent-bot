@@ -108,4 +108,17 @@ export const config = {
    * Default port is 3000, can be overridden by PORT environment variable
    */
   port: parseInt(process.env.PORT || '3000'),
+
+  /**
+   * Redis配置
+   * Redis configuration
+   */
+  redis: {
+    // Redis连接URL，从环境变量获取
+    // Redis connection URL from environment variables
+    // 格式: redis://[:password@]host[:port][/db]
+    // Format: redis://[:password@]host[:port][/db]
+    // 示例 / Example: redis://localhost:6379 or redis://:password@localhost:6379/0
+    url: process.env.REDIS_URL || '',
+  },
 };

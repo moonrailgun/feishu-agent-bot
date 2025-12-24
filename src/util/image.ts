@@ -50,11 +50,7 @@ export interface ImageGenerationRequest {
  */
 export interface ImageGenerationResponse {
   success: boolean;
-  data?: {
-    imageUrl?: string;
-    imageBase64?: string;
-    message?: string;
-  };
+  imageUrls?: string[];
   error?: string;
 }
 
@@ -115,6 +111,21 @@ export class ImageGenerator {
         method: 'POST',
         headers: {
           accept: '*/*',
+          'accept-language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+          'cache-control': 'no-cache',
+          'content-type': 'application/json',
+          origin: 'https://tavern.yata.art',
+          pragma: 'no-cache',
+          priority: 'u=1, i',
+          referer: 'https://tavern.yata.art/',
+          'sec-ch-ua': '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-site',
+          'user-agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
           Authorization: `Bearer ${this.config.authToken}`,
         },
         body: JSON.stringify(payload),
@@ -126,11 +137,14 @@ export class ImageGenerator {
 
       const data = await response.json();
 
+      console.log('image generation response:', data);
+
       return {
         success: true,
-        data,
+        imageUrls: data['image_urls'] || [],
       };
     } catch (error) {
+      console.error('image generation error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

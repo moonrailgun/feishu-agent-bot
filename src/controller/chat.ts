@@ -140,7 +140,8 @@ export class ChatController {
            * Unauthorized users need to complete authorization flow first
            */
           let loginMessageId: string | undefined;
-          if (!contextService.isLogin) {
+          const isLogin = await contextService.isLogin();
+          if (!isLogin) {
             // 发送登录链接给用户
             // Send login link to user
             const { messageId } = await provider.sendMessage(

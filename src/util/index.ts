@@ -69,3 +69,28 @@ export function pThrottle<T extends (...args: any[]) => Promise<any>>(fn: T, wai
     }
   }) as T;
 }
+
+/**
+ * Calculate seconds until expiration timestamp
+ * @param expiresAt Expiration timestamp in milliseconds
+ * @returns Seconds until expiration, or 0 if already expired
+ */
+export function getSecondsUntilExpiration(expiresAt: number): number {
+  const now = Date.now();
+  const diffMs = expiresAt - now;
+
+  if (diffMs <= 0) {
+    return 0;
+  }
+
+  return Math.floor(diffMs / 1000);
+}
+
+/**
+ * Check if timestamp has expired
+ * @param expiresAt Expiration timestamp in milliseconds
+ * @returns true if expired, false otherwise
+ */
+export function isExpired(expiresAt: number): boolean {
+  return Date.now() >= expiresAt;
+}

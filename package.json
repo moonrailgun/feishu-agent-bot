@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "ts-node src/app.ts",
     "dev:webhook": "ts-node src/app.ts webhook",
-    "check:types": "tsc --noEmit"
+    "check:types": "tsc --noEmit",
+    "test:upload-image": "ts-node test/upload-image.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
@@ -14,6 +15,7 @@
     "ai": "^4.3.16",
     "dotenv": "^16.5.1",
     "express": "^5.1.0",
+    "ioredis": "^5.8.2",
     "zod": "^3.25.67"
   },
   "devDependencies": {

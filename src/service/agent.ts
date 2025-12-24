@@ -24,6 +24,7 @@ import { pThrottle } from '../util';
 import { getSystemPrompt } from '../prompt';
 import { AgentCoreMessage, parseChunk2Message } from '../util/message';
 import { generateImage, ImageGenerationModel, AspectRatio } from '../util/image';
+import { larkService } from './lark';
 
 /**
  * AI代理服务类
@@ -102,7 +103,8 @@ export class AgentService {
 
     // Add image generation tool for all chats
     tools.generateImage = tool({
-      description: 'Generate an image based on a text prompt. Supports multiple models and aspect ratios.',
+      description:
+        'Generate an image based on a text prompt. Supports multiple models and aspect ratios. If success, the image keys will be returned. Image will direct render in the message. and current not support continue to modify it.',
       parameters: z.object({
         prompt: z.string().describe('The text prompt describing the image to generate'),
         model: z
@@ -158,12 +160,21 @@ export class AgentService {
           };
         }
 
+        const imageUrls = result.imageUrls;
+        if (imageUrls) {
+          const images = await Promise.all(imageUrls.map(url => larkService.uploadImageFromUrl(url, 'message')));
+
+          return {
+            success: true,
+            imageUrls: imageUrls,
+            imageKeys: images.map(image => image?.image_key).filter(Boolean),
+          };
+        }
+
         return {
           success: true,
-          payload: result,
-          // imageUrl: result.data?.imageUrl,
-          // imageBase64: result.data?.imageBase64,
-          // message: result.data?.message || 'Image generated successfully',
+          imageUrls: [],
+          imageKeys: [],
         };
       },
     });
