@@ -15,13 +15,15 @@
  * - Manage user session state
  */
 
-import { streamText } from 'ai';
+import { streamText, Tool, tool } from 'ai';
+import { z } from 'zod';
 import { config } from '../config';
 import { ContextService } from './context';
 import { ChatProvider, Message } from '../provider/type';
 import { pThrottle } from '../util';
 import { getSystemPrompt } from '../prompt';
 import { AgentCoreMessage, parseChunk2Message } from '../util/message';
+import { generateImage, ImageGenerationModel, AspectRatio } from '../util/image';
 
 /**
  * AI代理服务类
@@ -87,17 +89,84 @@ export class AgentService {
   async getTools(isGroup: boolean) {
     const userContext = await this.contextService.mustGetContext();
 
-    let tools: Awaited<ReturnType<(typeof userContext.mcpClients)[number]['tools']>> = {};
-    if (isGroup) {
-      // is group
-    } else {
-      // 工具集合，从所有MCP客户端收集
-      // Tool collection, gathered from all MCP clients
+    let tools: Record<string, Tool> = {};
+
+    // 工具集合，从所有MCP客户端收集
+    // Tool collection, gathered from all MCP clients
+    if (!isGroup) {
       for (const mcpClient of userContext.mcpClients) {
         const mcpTools = await mcpClient.tools();
         tools = { ...tools, ...mcpTools };
       }
     }
+
+    // Add image generation tool for all chats
+    tools.generateImage = tool({
+      description: 'Generate an image based on a text prompt. Supports multiple models and aspect ratios.',
+      parameters: z.object({
+        prompt: z.string().describe('The text prompt describing the image to generate'),
+        model: z
+          .enum(['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'midjourney', 'zimage', 'seedream-4-5-251128'])
+          .optional()
+          .default('gemini-2.5-flash-image')
+          .describe('The image generation model to use. Default: gemini-3-pro-image-preview'),
+        aspectRatio: z
+          .enum(['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9'])
+          .optional()
+          .describe('The aspect ratio of the generated image. Default: 1:1'),
+        temperature: z
+          .number()
+          .min(0)
+          .max(2)
+          .default(0.7)
+          .optional()
+          .describe('Controls randomness in generation. Range: 0.1-2. Default: 0.7'),
+        // width: z
+        //   .number()
+        //   .min(256)
+        //   .max(2048)
+        //   .optional()
+        //   .describe('Image width (must be multiple of 16, between 256-2048)'),
+        // height: z
+        //   .number()
+        //   .min(256)
+        //   .max(2048)
+        //   .optional()
+        //   .describe('Image height (must be multiple of 16, between 256-2048)'),
+      }),
+      execute: async ({
+        prompt,
+        model,
+        aspectRatio,
+        temperature,
+        // width,
+        // height,
+      }) => {
+        const result = await generateImage({
+          prompt,
+          // model: model || 'gemini-3-pro-image-preview',
+          model: model || 'gemini-2.5-flash-image',
+          aspect_ratio: aspectRatio || '1:1',
+          temperature,
+          // width,
+          // height,
+        });
+
+        if (!result.success) {
+          return {
+            error: result.error || 'Failed to generate image',
+          };
+        }
+
+        return {
+          success: true,
+          payload: result,
+          // imageUrl: result.data?.imageUrl,
+          // imageBase64: result.data?.imageBase64,
+          // message: result.data?.message || 'Image generated successfully',
+        };
+      },
+    });
 
     return tools;
   }
@@ -156,14 +225,16 @@ export class AgentService {
 
       for (const tool of Object.values(tools)) {
         const originExec = tool.execute;
-        tool.execute = (async (...args) => {
-          try {
-            return await originExec(...args);
-          } catch (error) {
-            console.error(error);
-            return error;
-          }
-        }) as typeof tool.execute;
+        if (originExec) {
+          tool.execute = (async (...args) => {
+            try {
+              return await originExec(...args);
+            } catch (error) {
+              console.error(error);
+              return error;
+            }
+          }) as typeof tool.execute;
+        }
       }
 
       console.log('处理用户请求:', query);
@@ -171,6 +242,7 @@ export class AgentService {
       // Start streaming text generation
       const stream = streamText({
         model: config.agent.model,
+        temperature: config.agent.model.modelId === 'gpt-5' ? 1 : 0,
 
         // 系统提示词
         // System prompt
@@ -208,7 +280,9 @@ export class AgentService {
           try {
             this.provider.updateMessage(messageId, messages);
           } catch (error) {
-            this.provider.sendMessage(chatId, '发生错误，请重试:\n' + JSON.stringify(error, null, 2));
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.error('更新消息失败:', error);
+            this.provider.sendMessage(chatId, `发生错误，请重试:\n${errorMsg}`);
           }
         },
 
@@ -219,9 +293,29 @@ export class AgentService {
          * Handle exceptions during generation process
          */
         onError: e => {
-          console.error(e);
+          console.error('AI生成错误:', e);
           this.isRunning = false;
-          this.provider.sendMessage(chatId, '发生错误，请重试:\n' + JSON.stringify(e, null, 2));
+
+          // Extract concise error message
+          let errorMsg = 'Unknown error';
+          if (e instanceof Error) {
+            errorMsg = e.message;
+            // For API errors, try to extract more specific info
+            if ('cause' in e && e.cause) {
+              const cause = e.cause as any;
+              if (cause.message) {
+                errorMsg = cause.message;
+              }
+            }
+          } else if (typeof e === 'object' && e !== null) {
+            if ('message' in e) {
+              errorMsg = String(e.message);
+            } else if ('error' in e) {
+              errorMsg = String(e.error);
+            }
+          }
+
+          this.provider.sendMessage(chatId, `AI处理失败，请稍后重试\n错误信息: ${errorMsg}`);
         },
 
         /**
