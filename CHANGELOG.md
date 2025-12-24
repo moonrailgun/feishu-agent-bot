@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3](https://github.com/moonrailgun/feishu-agent-bot/compare/v1.1.2...v1.1.3) (2025-12-24)
+
+### Others
+
+* update Docker publish workflow ([704c951](https://github.com/moonrailgun/feishu-agent-bot/commit/704c9519fc5ea2cfe3bb7f40d674c470b6b5ee68))
+
 ## [1.1.2](https://github.com/moonrailgun/feishu-agent-bot/compare/v1.1.1...v1.1.2) (2025-12-24)
 
 ### Others
