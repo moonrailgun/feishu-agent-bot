@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/moonrailgun/feishu-agent-bot/compare/v1.1.1...v1.1.2) (2025-12-24)
+
+### Others
+
+* remove ghcr.io login step from Docker publish workflow ([0a2b616](https://github.com/moonrailgun/feishu-agent-bot/commit/0a2b616d8f5bf1590114373a3516c66aac65d67d))
+* update release-it configuration to include release name format ([95d3a62](https://github.com/moonrailgun/feishu-agent-bot/commit/95d3a62f2e33a82e5543970469aacba9a5f0dc8f))
+
 ## [1.1.1](https://github.com/moonrailgun/feishu-agent-bot/compare/1.1.0...v1.1.1) (2025-12-24)
 
 ### Features
