@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Redis service
+  redis:
+    image: redis:7-alpine
+    container_name: feishu-bot-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - feishu-bot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    command: redis-server --save 60 1 --loglevel warning
+
+  # Feishu agent bot application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: feishu-agent-bot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Load from .env file, with default Redis URL
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - APP_ID=${APP_ID}
+      - APP_SECRET=${APP_SECRET}
+      - LARK_DOMAIN=${LARK_DOMAIN:-https://open.feishu.cn}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PORT=${PORT:-3000}
+      - IMAGE_GENERATION_API_URL=${IMAGE_GENERATION_API_URL}
+      - IMAGE_GENERATION_TOKEN=${IMAGE_GENERATION_TOKEN}
+      - IMAGE_GENERATION_DEFAULT_MODEL=${IMAGE_GENERATION_DEFAULT_MODEL}
+      - IMAGE_GENERATION_REFERER=${IMAGE_GENERATION_REFERER}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - feishu-bot-network
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  feishu-bot-network:
+    driver: bridge

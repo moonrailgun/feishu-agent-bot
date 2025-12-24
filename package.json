@@ -1,10 +1,14 @@
 {
-  "name": "mcp-larkbot-demo",
+  "name": "lark-agent-bot",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "ts-node src/app.ts",
     "dev:webhook": "ts-node src/app.ts webhook",
+    "build": "tsc",
+    "start": "bun dist/app.js",
+    "start:webhook": "bun dist/app.js webhook",
+    "release": "release-it",
     "check:types": "tsc --noEmit",
     "test:upload-image": "ts-node test/upload-image.ts"
   },
@@ -21,6 +25,7 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
+    "release-it": "^19.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
