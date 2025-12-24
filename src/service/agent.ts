@@ -84,13 +84,41 @@ export class AgentService {
     return await this.provider.updateMessage(messageId, message);
   }, 200);
 
+  async getTools(isGroup: boolean) {
+    const userContext = await this.contextService.mustGetContext();
+
+    let tools: Awaited<ReturnType<(typeof userContext.mcpClients)[number]['tools']>> = {};
+    if (isGroup) {
+      // is group
+    } else {
+      // 工具集合，从所有MCP客户端收集
+      // Tool collection, gathered from all MCP clients
+      for (const mcpClient of userContext.mcpClients) {
+        const mcpTools = await mcpClient.tools();
+        tools = { ...tools, ...mcpTools };
+      }
+    }
+
+    return tools;
+  }
+
   /**
    * 生成AI响应
    * Generate AI response
    * @param chatId 聊天ID / Chat ID
    * @param query 用户查询 / User query
    */
-  async generateResponse(chatId: string, query: string, replacedMessageId?: string) {
+  async generateResponse({
+    chatId,
+    query,
+    replacedMessageId,
+    isGroup,
+  }: {
+    chatId: string;
+    query: string;
+    replacedMessageId?: string;
+    isGroup: boolean;
+  }) {
     // 获取用户上下文信息
     // Get user context information
     const userContext = await this.contextService.mustGetContext();
@@ -124,13 +152,7 @@ export class AgentService {
       // Temporary message array for streaming updates
       let tempMessages: AgentCoreMessage[] = [];
 
-      // 工具集合，从所有MCP客户端收集
-      // Tool collection, gathered from all MCP clients
-      let tools: Awaited<ReturnType<(typeof userContext.mcpClients)[number]['tools']>> = {};
-      for (const mcpClient of userContext.mcpClients) {
-        const mcpTools = await mcpClient.tools();
-        tools = { ...tools, ...mcpTools };
-      }
+      const tools = await this.getTools(isGroup);
 
       for (const tool of Object.values(tools)) {
         const originExec = tool.execute;

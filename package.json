@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "ts-node src/app.ts",
-    "dev:webhook": "ts-node src/app.ts webhook"
+    "dev:webhook": "ts-node src/app.ts webhook",
+    "check:types": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",

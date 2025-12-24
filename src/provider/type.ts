@@ -84,7 +84,17 @@ export interface ChatProvider {
    */
   registerMessageReceiveEvent(
     app: Express,
-    onMessage: (userId: string, chatId: string, query: string) => Promise<void>
+    onMessage: ({
+      userId,
+      chatId,
+      query,
+      isGroup,
+    }: {
+      userId: string;
+      chatId: string;
+      query: string;
+      isGroup: boolean;
+    }) => Promise<void>
   ): void;
 
   /**

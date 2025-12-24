@@ -239,7 +239,19 @@ export class LarkChatProvider implements ChatProvider {
     });
   }
 
-  protected getLarkEventDispatcher(onMessage: (userId: string, chatId: string, query: string) => Promise<void>) {
+  protected getLarkEventDispatcher(
+    onMessage: ({
+      userId,
+      chatId,
+      query,
+      isGroup,
+    }: {
+      userId: string;
+      chatId: string;
+      query: string;
+      isGroup: boolean;
+    }) => Promise<void>
+  ) {
     return new Lark.EventDispatcher({}).register({
       // 注册即时消息接收事件处理器
       // Register IM message receive event handler
@@ -253,6 +265,7 @@ export class LarkChatProvider implements ChatProvider {
           const chatId = messageEvent.message.chat_id || '';
           const chatType = messageEvent.message.chat_type || '';
           const messageType = messageEvent.message?.message_type || '';
+          const isGroup = chatType === 'group';
 
           if (chatType === 'group') {
             await larkService.sendTextMessage(chatId, '暂不支持群组消息'); // 暂不开放群组消息，因为不安全
@@ -280,7 +293,7 @@ export class LarkChatProvider implements ChatProvider {
 
           // 调用消息处理回调
           // Call message processing callback
-          await onMessage(userId, chatId, query);
+          await onMessage({ userId, chatId, query, isGroup });
         })();
       },
     });
@@ -294,7 +307,17 @@ export class LarkChatProvider implements ChatProvider {
    */
   async registerMessageReceiveEvent(
     _app: Express,
-    onMessage: (userId: string, chatId: string, query: string) => Promise<void>
+    onMessage: ({
+      userId,
+      chatId,
+      query,
+      isGroup,
+    }: {
+      userId: string;
+      chatId: string;
+      query: string;
+      isGroup: boolean;
+    }) => Promise<void>
   ) {
     const dispatcher = this.getLarkEventDispatcher(onMessage);
 
@@ -307,7 +330,17 @@ export class LarkChatProvider implements ChatProvider {
 export class LarkWebhookChatProvider extends LarkChatProvider {
   async registerMessageReceiveEvent(
     app: Express,
-    onMessage: (userId: string, chatId: string, query: string) => Promise<void>
+    onMessage: ({
+      userId,
+      chatId,
+      query,
+      isGroup,
+    }: {
+      userId: string;
+      chatId: string;
+      query: string;
+      isGroup: boolean;
+    }) => Promise<void>
   ) {
     const dispatcher = this.getLarkEventDispatcher(onMessage);
     app.use('/webhook/event', Lark.adaptExpress(dispatcher, { autoChallenge: true }));
