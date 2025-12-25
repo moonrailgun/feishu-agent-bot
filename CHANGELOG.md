@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0](https://github.com/moonrailgun/feishu-agent-bot/compare/v1.1.3...v1.2.0) (2025-12-25)
+
+### Features
+
+* add /whoami command to retrieve current user information and update callback URL configuration ([47c2e8a](https://github.com/moonrailgun/feishu-agent-bot/commit/47c2e8a16135f1ae52f6f85998c14d1579c0af96))
+
 ## [1.1.3](https://github.com/moonrailgun/feishu-agent-bot/compare/v1.1.2...v1.1.3) (2025-12-24)
 
 ### Others
