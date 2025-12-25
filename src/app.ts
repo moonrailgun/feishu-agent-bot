@@ -20,6 +20,7 @@ import { config } from './config';
 import { ChatController } from './controller/chat';
 import { LarkChatProvider, LarkWebhookChatProvider } from './provider/lark';
 import path from 'path';
+import { version } from '../package.json';
 
 const mode = process.argv[2] === 'webhook' ? 'webhook' : 'websocket';
 
@@ -41,6 +42,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 // 注册聊天控制器的路由和事件监听器
 // Register chat controller routes and event listeners
 chatController.register(app);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ version });
+});
 
 // 启动HTTP服务器并监听指定端口
 // Start HTTP server and listen on specified port
