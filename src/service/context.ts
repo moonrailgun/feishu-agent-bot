@@ -18,6 +18,7 @@
 import { CoreMessage } from 'ai';
 import { MCPClientService } from './mcp';
 import { RedisService } from './redis';
+import { larkService } from './lark';
 
 /**
  * 认证令牌接口
@@ -105,6 +106,26 @@ export class ContextService {
    */
   async isLogin(): Promise<boolean> {
     return await RedisService.hasAuthToken(this.userId);
+  }
+
+  /**
+   * 获取用户信息
+   * Get user information
+   * @returns Promise<any> 用户信息 / User information
+   */
+  async getUserInfo(): Promise<any> {
+    const authToken = await RedisService.getAuthToken(this.userId);
+    if (!authToken) {
+      return null;
+    }
+
+    try {
+      const userInfo = await larkService.getUserInfo(authToken.accessToken);
+      return userInfo.data;
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+      return null;
+    }
   }
 
   /**

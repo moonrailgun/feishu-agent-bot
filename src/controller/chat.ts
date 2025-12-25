@@ -108,6 +108,31 @@ export class ChatController {
           }
 
           /**
+           * 处理查看用户信息命令
+           * Handle whoami command
+           * 用户发送 /whoami 命令时显示当前用户信息
+           * Show current user information when user sends /whoami command
+           */
+          if (query.startsWith('/whoami')) {
+            const userInfo = await contextService.getUserInfo();
+            if (!userInfo) {
+              await provider.sendMessage(chatId, '你还未登录，请先使用 /login 命令登录');
+              return;
+            }
+
+            const infoText =
+              `**用户信息**\n\n` +
+              `用户ID: ${userId}\n` +
+              `当前chat: ${chatId}\n` +
+              `名称: ${userInfo.name || '未知'}\n` +
+              `英文名: ${userInfo.en_name || '未知'}\n` +
+              `登录状态: 已登录`;
+
+            await provider.sendMessage(chatId, infoText);
+            return;
+          }
+
+          /**
            * 生成AI响应
            * Generate AI response
            * 开始处理消息并生成智能回复

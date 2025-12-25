@@ -249,6 +249,7 @@ The bot will then call the appropriate tool to create the table for you.
 ### 特殊命令 / Special Commands
 
 - `/login` - 触发授权登录流程，授权后可使用飞书 MCP 工具 / Trigger authorization login process to use Lark MCP tools
+- `/whoami` - 查看当前用户信息（需要先登录）/ View current user information (requires login first)
 - `/clear` - 清除当前用户的对话上下文 / Clear the current user's conversation context
 
 ## 核心组件说明 / Core Components

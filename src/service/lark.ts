@@ -71,7 +71,7 @@ export class LarkService {
    * @returns 完整的回调URL / Complete callback URL
    */
   get callbackUrl() {
-    return `http://localhost:${config.port}${config.lark.callbackPath}`;
+    return `${config.lark.callbackHost}${config.lark.callbackPath}`;
   }
 
   /**

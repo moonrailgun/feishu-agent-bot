@@ -43,6 +43,8 @@ export const config = {
     // Feishu/Lark  App Secret from environment variables
     appSecret: process.env.APP_SECRET || '',
 
+    callbackHost: process.env.LARK_CALLBACK_HOST || 'http://localhost:3000',
+
     // OAuth回调路径，用户授权后的重定向地址
     // OAuth callback path for user authorization redirect
     callbackPath: '/callback',
